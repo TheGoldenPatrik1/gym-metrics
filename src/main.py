@@ -2,7 +2,7 @@ import json
 import argparse
 import os
 import panel as pn
-from panels import load_frequency, load_frequency_comparison, load_lift_progress, load_weight_lifted
+import panels
 
 pn.extension(design="native", sizing_mode="stretch_width")
 
@@ -39,8 +39,7 @@ def main():
     exercise_names.append('All')
 
     # Define the input widgets
-    low_values_checkbox = pn.widgets.Checkbox(name='Hide Values Under', value=True, width=130, align=('start', 'center'))
-    low_values_input = pn.widgets.IntInput(name='', value=5, step=1, start=0, end=100, width=50, align='start')
+    settings = panels.load_settings_inputs()
     time_interval_select = pn.widgets.Select(name='Time Interval', options=['week', 'month', 'year'], value='month')
     exercise_select = pn.widgets.Select(name='Exercise', options=['All'], value='All')
     settings_icon = pn.widgets.Button(
@@ -53,16 +52,18 @@ def main():
 
     # Define callbacks to update the input widgets
     def update_exercise_select(_=None):
-        exercise_select.options = [exercise for exercise in exercise_names if not low_values_checkbox.value or exercise == 'All' or exercises[exercise] > low_values_input.value]
-    low_values_checkbox.param.watch(update_exercise_select, 'value')
-    low_values_input.param.watch(update_exercise_select, 'value')
+        exercise_select.options = [
+            exercise for exercise in exercise_names if not settings['low_values_checkbox'].value or exercise == 'All' or exercises[exercise] > settings['low_values_input'].value
+        ]
+    settings['low_values_checkbox'].param.watch(update_exercise_select, 'value')
+    settings['low_values_input'].param.watch(update_exercise_select, 'value')
     update_exercise_select()
     
     # Load the components
-    frequency = load_frequency(data, time_interval_select, exercise_select)
-    weight_lifted = load_weight_lifted(data, time_interval_select, exercise_select)
-    lift_progress = load_lift_progress(data, exercise_select)
-    frequency_comparison = load_frequency_comparison(data, exercise_select, low_values_checkbox, low_values_input)
+    frequency = panels.load_frequency(data, time_interval_select, exercise_select)
+    weight_lifted = panels.load_weight_lifted(data, time_interval_select, exercise_select)
+    lift_progress = panels.load_lift_progress(data, exercise_select)
+    frequency_comparison = panels.load_frequency_comparison(data, exercise_select, settings['low_values_checkbox'], settings['low_values_input'])
 
     # Create the main layout
     template = pn.template.MaterialTemplate(title="GymMetrics", main=[
@@ -75,8 +76,7 @@ def main():
 
     # Build the settings modal
     settings_icon.on_click(lambda _: template.open_modal())
-    low_values = pn.Row(low_values_checkbox, low_values_input)
-    modal = pn.Column('## Settings', low_values, width=500)
+    modal = panels.load_settings_modal(settings)
     template.modal.append(modal)
     
     # Serve the app
