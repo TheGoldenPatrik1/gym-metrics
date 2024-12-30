@@ -41,12 +41,9 @@ def plot_exercise_frequency_comparison(data, sort_by_frequency, hide_low_values,
         hover_tooltips=[('Exercise', '@Exercise'), ('Frequency', '@Frequency')]
     ).opts(default_tools=default_bokeh_tools)
 
-def load_frequency_comparison(data, exercise_select):
+def load_frequency_comparison(data, exercise_select, low_values_checkbox, low_values_input):
     def build_content():
         sort_by_frequency = pn.widgets.Checkbox(name='Sort by Frequency', value=True)
-        low_values_checkbox = pn.widgets.Checkbox(name='Hide Values Under', value=True, width=120, align=('start', 'center'))
-        low_values_input = pn.widgets.IntInput(name='', value=5, step=1, start=0, end=100, width=50, align='start')
-        low_values = pn.Row(low_values_checkbox, low_values_input)
 
         def update_exercise_frequency_comparison(sort_by_frequency, hide_low_values, low_values_threshold, exercise):
             return plot_exercise_frequency_comparison(data, sort_by_frequency, hide_low_values, low_values_threshold, exercise)
@@ -54,6 +51,6 @@ def load_frequency_comparison(data, exercise_select):
             update_exercise_frequency_comparison, sort_by_frequency, low_values_checkbox, low_values_input, exercise_select
         )
 
-        return [sort_by_frequency, low_values, exercise_frequency_comparison]
+        return [sort_by_frequency, exercise_frequency_comparison]
     
     return lazy_load_accordion('Exercise Frequency Comparison', build_content)
