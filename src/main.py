@@ -42,6 +42,7 @@ def main():
     settings = panels.load_settings_inputs()
     time_interval_select = pn.widgets.Select(name='Time Interval', options=['week', 'month', 'year'], value='month')
     exercise_select = pn.widgets.Select(name='Exercise', options=['All'], value='All')
+    second_exercise_select = pn.widgets.Select(name='Second Exercise', options=['Unselected'], value='Unselected')
     settings_icon = pn.widgets.Button(
         name="",
         button_type="primary",
@@ -58,16 +59,23 @@ def main():
     settings['low_values_checkbox'].param.watch(update_exercise_select, 'value')
     settings['low_values_input'].param.watch(update_exercise_select, 'value')
     update_exercise_select()
+    def update_exercise_select_2(_=None):
+        second_exercise_select.options = [
+            exercise for exercise in exercise_names if not settings['low_values_checkbox'].value or (exercise in exercises and exercises[exercise] > settings['low_values_input'].value)
+        ] + ['Unselected']
+    settings['low_values_checkbox'].param.watch(update_exercise_select_2, 'value')
+    settings['low_values_input'].param.watch(update_exercise_select_2, 'value')
+    update_exercise_select_2()
     
     # Load the components
     frequency = panels.load_frequency(data, time_interval_select, exercise_select)
     weight_lifted = panels.load_weight_lifted(data, time_interval_select, exercise_select)
-    lift_progress = panels.load_lift_progress(data, exercise_select)
+    lift_progress = panels.load_lift_progress(data, exercise_select, second_exercise_select)
     frequency_comparison = panels.load_frequency_comparison(data, exercise_select, settings['low_values_checkbox'], settings['low_values_input'])
 
     # Create the main layout
     template = pn.template.MaterialTemplate(title="GymMetrics", main=[
-        pn.Row(time_interval_select, exercise_select, settings_icon),
+        pn.Row(time_interval_select, exercise_select, second_exercise_select, settings_icon),
         frequency,
         weight_lifted,
         lift_progress,
