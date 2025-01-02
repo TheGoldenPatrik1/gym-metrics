@@ -1,5 +1,6 @@
 import panel as pn
 import pandas as pd
+from functools import reduce
 from bokeh.models.formatters import NumeralTickFormatter
 from bokeh.models import HoverTool
 from components import lazy_load_accordion, stat_table
@@ -94,17 +95,23 @@ def get_weight_lifted_df(data, time_interval, exercise):
 
     return df, weight_lifted
 
-def generate_weight_lifted_stats(data, time_interval, exercise):
+def generate_weight_lifted_stats_single(data, time_interval, exercise, is_single):
     _, weight_lifted = get_weight_lifted_df(data, time_interval, exercise)
-    return stat_table(weight_lifted, 'weight_lifted')
+    return stat_table(weight_lifted, 'weight_lifted', False if is_single else exercise)
 
-def plot_weight_lifted(data, time_interval, exercise):
+def generate_weight_lifted_stats(data, time_interval, exercises):
+    exercises = [exercise for exercise in exercises if exercise != 'Unselected']
+    stats = [generate_weight_lifted_stats_single(data, time_interval, exercise, len(exercises) == 1) for exercise in exercises]
+    return pn.Column(*stats)
+
+def plot_weight_lifted_single(data, time_interval, exercise, is_single):
     _, weight_lifted = get_weight_lifted_df(data, time_interval, exercise)
+    
+    tooltips = [("date", "@date{%F}" if time_interval == "week" else "@date"), ("weight_lifted", "@weight_lifted{0,0}")]
+    if not is_single:
+        tooltips.insert(0, ("exercise", exercise))
+    hover = HoverTool(tooltips=tooltips, formatters={"@date": "datetime"})
 
-    hover = HoverTool(
-        tooltips=[("date", "@date{%F}" if time_interval == "week" else "@date"), ("weight_lifted", "@weight_lifted{0,0}")],
-        formatters={"@date": "datetime"}
-    )
     plot = weight_lifted.hvplot.bar(
         x='date',
         y='weight_lifted',
@@ -113,25 +120,43 @@ def plot_weight_lifted(data, time_interval, exercise):
         rot=90,
         yformatter=NumeralTickFormatter(format='0,0'),
         ylabel='Weight Lifted (lbs)',
-        xlabel='Date'
-    ).opts(tools=[hover], default_tools=default_bokeh_tools)
+        xlabel='Date',
+        label=None if is_single else exercise
+    ).opts(tools=[hover])
 
     return plot
 
+def plot_weight_lifted(data, time_interval, exercises):
+    exercises = [exercise for exercise in exercises if exercise != 'Unselected']
+    is_single = len(exercises) == 1
+
+    plots = [plot_weight_lifted_single(data, time_interval, exercise, is_single) for exercise in exercises]
+
+    plot = plots[0] if is_single else reduce(lambda x, y: x * y, plots)
+    plot = plot.opts(default_tools=default_bokeh_tools)
+    if not is_single:
+        plot = plot.opts(legend_position='top')
+    return plot
+
+def build_weight_lifted_header(time_interval, *exercises):
+    exercise_str = "" if exercises[0] == 'All' else exercises[0] + " "
+    exercises = [exercise for exercise in exercises if exercise != 'Unselected']
+    if len(exercises) > 1:
+        exercise_str = " vs ".join(exercises) + " "
+    return f"{exercise_str}Weight Lifted per {time_interval.capitalize()}"
+
 def load_weight_lifted(data, time_interval_select, exercise_select):
     def build_content():
-        def update_weight_lifted_stats(time_interval, exercise):
-            return generate_weight_lifted_stats(data, time_interval, exercise)
-        weight_lifted_stats = pn.bind(update_weight_lifted_stats, time_interval=time_interval_select, exercise=exercise_select)
-        def update_weight_lifted_plot(time_interval, exercise):
-            return plot_weight_lifted(data, time_interval, exercise)
-        weight_lifted_plot = pn.bind(update_weight_lifted_plot, time_interval=time_interval_select, exercise=exercise_select)
+        def update_weight_lifted_stats(time_interval, *exercises):
+            return generate_weight_lifted_stats(data, time_interval, exercises)
+        weight_lifted_stats = pn.bind(update_weight_lifted_stats, time_interval_select, *exercise_select)
+
+        def update_weight_lifted_plot(time_interval, *exercises):
+            return plot_weight_lifted(data, time_interval, exercises)
+        weight_lifted_plot = pn.bind(update_weight_lifted_plot, time_interval_select, *exercise_select)
+        
         return [weight_lifted_stats, weight_lifted_plot]
     
-    weight_lifted_header = pn.bind(
-        lambda time_interval, exercise: f'{"" if exercise == "All" else exercise + " "}Weight Lifted per {time_interval.capitalize()}',
-        time_interval=time_interval_select,
-        exercise=exercise_select
-    )
+    weight_lifted_header = pn.bind(build_weight_lifted_header, time_interval_select, *exercise_select)
     
     return lazy_load_accordion(weight_lifted_header, build_content)

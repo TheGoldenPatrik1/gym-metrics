@@ -14,7 +14,7 @@ def build_df(data):
     df = pd.DataFrame(list(exercises.items()), columns=['Exercise', 'Frequency'])
     return df
 
-def plot_exercise_frequency_comparison(data, sort_by_frequency, hide_low_values, low_values_threshold, exercise):
+def plot_exercise_frequency_comparison(data, sort_by_frequency, hide_low_values, low_values_threshold, exercises):
     # Build the DataFrame
     df = build_df(data)
 
@@ -27,7 +27,7 @@ def plot_exercise_frequency_comparison(data, sort_by_frequency, hide_low_values,
         df = df.sort_values(by='Exercise')
     
     df['Color'] = df['Exercise'].apply(
-        lambda x: 'red' if x == exercise else '#0072b5'
+        lambda x: 'red' if x in exercises else '#0072b5'
     )
 
     # Plot the data
@@ -45,10 +45,10 @@ def load_frequency_comparison(data, exercise_select, low_values_checkbox, low_va
     def build_content():
         sort_by_frequency = pn.widgets.Checkbox(name='Sort by Frequency', value=True)
 
-        def update_exercise_frequency_comparison(sort_by_frequency, hide_low_values, low_values_threshold, exercise):
-            return plot_exercise_frequency_comparison(data, sort_by_frequency, hide_low_values, low_values_threshold, exercise)
+        def update_exercise_frequency_comparison(sort_by_frequency, hide_low_values, low_values_threshold, *exercises):
+            return plot_exercise_frequency_comparison(data, sort_by_frequency, hide_low_values, low_values_threshold, exercises)
         exercise_frequency_comparison = pn.bind(
-            update_exercise_frequency_comparison, sort_by_frequency, low_values_checkbox, low_values_input, exercise_select
+            update_exercise_frequency_comparison, sort_by_frequency, low_values_checkbox, low_values_input, *exercise_select
         )
 
         return [sort_by_frequency, exercise_frequency_comparison]

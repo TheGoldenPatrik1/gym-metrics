@@ -3,6 +3,7 @@ import argparse
 import os
 import panel as pn
 import panels
+import modules
 
 pn.extension(design="native", sizing_mode="stretch_width")
 
@@ -39,43 +40,30 @@ def main():
     exercise_names.append('All')
 
     # Define the input widgets
-    settings = panels.load_settings_inputs()
-    time_interval_select = pn.widgets.Select(name='Time Interval', options=['week', 'month', 'year'], value='month')
-    exercise_select = pn.widgets.Select(name='Exercise', options=['All'], value='All')
-    second_exercise_select = pn.widgets.Select(name='Second Exercise', options=['Unselected'], value='Unselected')
-    settings_icon = pn.widgets.Button(
-        name="",
-        button_type="primary",
-        icon="settings",
-        width=50,
-        align="end"
-    )
+    settings = modules.load_settings_inputs()
+    inputs = modules.load_inputs()
 
     # Define callbacks to update the input widgets
-    def update_exercise_select(_=None):
-        exercise_select.options = [
-            exercise for exercise in exercise_names if not settings['low_values_checkbox'].value or exercise == 'All' or exercises[exercise] > settings['low_values_input'].value
-        ]
-    settings['low_values_checkbox'].param.watch(update_exercise_select, 'value')
-    settings['low_values_input'].param.watch(update_exercise_select, 'value')
-    update_exercise_select()
-    def update_exercise_select_2(_=None):
-        second_exercise_select.options = [
-            exercise for exercise in exercise_names if not settings['low_values_checkbox'].value or (exercise in exercises and exercises[exercise] > settings['low_values_input'].value)
-        ] + ['Unselected']
-    settings['low_values_checkbox'].param.watch(update_exercise_select_2, 'value')
-    settings['low_values_input'].param.watch(update_exercise_select_2, 'value')
-    update_exercise_select_2()
+    for i in range(len(inputs['exercise_select'])):
+        def update_exercise_select():
+            inputs['exercise_select'][i].options = [
+                exercise for exercise in exercise_names if not settings['low_values_checkbox'].value or exercise == 'All' or exercises[exercise] > settings['low_values_input'].value
+            ]
+            if i > 0:
+                inputs['exercise_select'][i].options[len(inputs['exercise_select'][i].options) - 1] = 'Unselected'
+        settings['low_values_checkbox'].param.watch(update_exercise_select, 'value')
+        settings['low_values_input'].param.watch(update_exercise_select, 'value')
+        update_exercise_select()
     
     # Load the components
-    frequency = panels.load_frequency(data, time_interval_select, exercise_select)
-    weight_lifted = panels.load_weight_lifted(data, time_interval_select, exercise_select)
-    lift_progress = panels.load_lift_progress(data, exercise_select, second_exercise_select)
-    frequency_comparison = panels.load_frequency_comparison(data, exercise_select, settings['low_values_checkbox'], settings['low_values_input'])
+    frequency = panels.load_frequency(data, inputs['time_interval_select'], inputs['exercise_select'])
+    weight_lifted = panels.load_weight_lifted(data, inputs['time_interval_select'], inputs['exercise_select'])
+    lift_progress = panels.load_lift_progress(data, inputs['exercise_select'])
+    frequency_comparison = panels.load_frequency_comparison(data, inputs['exercise_select'], settings['low_values_checkbox'], settings['low_values_input'])
 
     # Create the main layout
     template = pn.template.MaterialTemplate(title="GymMetrics", main=[
-        pn.Row(time_interval_select, exercise_select, second_exercise_select, settings_icon),
+        modules.display_inputs(inputs),
         frequency,
         weight_lifted,
         lift_progress,
@@ -83,8 +71,8 @@ def main():
     ])
 
     # Build the settings modal
-    settings_icon.on_click(lambda _: template.open_modal())
-    modal = panels.load_settings_modal(settings)
+    inputs['settings_icon'].on_click(lambda _: template.open_modal())
+    modal = modules.load_settings_modal(settings)
     template.modal.append(modal)
     
     # Serve the app

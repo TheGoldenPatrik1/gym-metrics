@@ -78,7 +78,7 @@ def calculate_lift_differences(data, exercises):
 
     # Check if there are any differences
     if len(differences) == 0:
-        return pn.pane.Markdown("There are no differences avaiable for the selected exercises.")
+        return pn.pane.Markdown("There are no differences avaiable for the selected exercise(s).")
 
     # Convert differences to a markdown table
     table = "| " + " | ".join(differences.keys()) + " |\n"
@@ -98,9 +98,10 @@ def generate_label(num_exercises, num_weight_types, exercise, weight_type):
 
 def plot_lift_progress(data, exercises):
     dfs = build_all_dfs(data, exercises)
+    df_count = sum([len(df) for df in dfs.values()])
 
-    if len(dfs[exercises[0]]) == 0:
-        return pn.pane.Markdown("There is no data available for the selected exercise.")
+    if df_count == 0:
+        return pn.pane.Markdown("There is no data available for the selected exercise(s).")
 
     hover = HoverTool(
         tooltips=[("date", "@date{%F}"), ("weight lifted", "@weight_lifted"), ("sets", "@sets")],
@@ -126,42 +127,39 @@ def plot_lift_progress(data, exercises):
             plots.append(plot)
 
     plot = reduce(lambda x, y: x * y, plots)
-    if len(dfs) > 1 or len(dfs[exercises[0]]) > 1:
+    if df_count > 1:
         plot = plot.opts(legend_position='top')
     plot = plot.opts(default_tools=default_bokeh_tools)
 
     return plot
 
-def generate_exercise_list(exercise, second_exercise):
-    if exercise == 'All':
+def generate_exercise_list(exercises):
+    if exercises[0] == 'All':
         return ['Pull-ups', 'Overhead Press', 'Bench', 'Squat', 'Deadlift']
-    if second_exercise == 'Unselected':
-        return [exercise]
-    return [exercise, second_exercise]
+    return [exercise for exercise in exercises if exercise != 'Unselected']
 
-def build_exercise_header(exercise, second_exercise):
-    if exercise == 'All':
+def build_exercise_header(*exercises):
+    if exercises[0] == 'All':
         return 'Lift Progress'
-    if second_exercise == 'Unselected':
-        return f"{exercise} Progress"
-    return f"{exercise} vs {second_exercise} Progress"
+    exercises = [exercise for exercise in exercises if exercise != 'Unselected']
+    if len(exercises) == 1:
+        return f"{exercises[0]} Progress"
+    return f"{' vs '.join(exercises)} Progress"
 
-def load_lift_progress(data, exercise_select, second_exercise_select):
+def load_lift_progress(data, exercise_select):
     def build_content():
-        def update_lift_differences(exercise, second_exercise):
-            exercises = generate_exercise_list(exercise, second_exercise)
+        def update_lift_differences(*exercise_input):
+            exercises = generate_exercise_list(exercise_input)
             return calculate_lift_differences(data, exercises)
-        lift_differences = pn.bind(update_lift_differences, exercise_select, second_exercise_select)
-        def update_lift_progress_plot(exercise, second_exercise):
-            exercises = generate_exercise_list(exercise, second_exercise)
+        lift_differences = pn.bind(update_lift_differences, *exercise_select)
+
+        def update_lift_progress_plot(*exercise_input):
+            exercises = generate_exercise_list(exercise_input)
             return plot_lift_progress(data, exercises)
-        lift_progress_plot = pn.bind(update_lift_progress_plot, exercise_select, second_exercise_select)
+        lift_progress_plot = pn.bind(update_lift_progress_plot, *exercise_select)
+        
         return [lift_differences, lift_progress_plot]
-    
-    lift_progress_header = pn.bind(
-        build_exercise_header,
-        exercise=exercise_select,
-        second_exercise=second_exercise_select
-    )
+
+    lift_progress_header = pn.bind(build_exercise_header, *exercise_select)
     
     return lazy_load_accordion(lift_progress_header, build_content)
