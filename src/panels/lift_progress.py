@@ -146,7 +146,9 @@ def build_exercise_header(*exercises):
         return f"{exercises[0]} Progress"
     return f"{' vs '.join(exercises)} Progress"
 
-def load_lift_progress(data, exercise_select):
+def load_lift_progress(data, inputs):
+    exercise_select = inputs['exercise_select']
+    
     def build_content():
         def update_lift_differences(*exercise_input):
             exercises = generate_exercise_list(exercise_input)
@@ -157,7 +159,7 @@ def load_lift_progress(data, exercise_select):
             exercises = generate_exercise_list(exercise_input)
             return plot_lift_progress(data, exercises)
         lift_progress_plot = pn.bind(update_lift_progress_plot, *exercise_select)
-        
+
         return [lift_differences, lift_progress_plot]
 
     lift_progress_header = pn.bind(build_exercise_header, *exercise_select)

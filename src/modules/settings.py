@@ -4,7 +4,7 @@ def load_settings_inputs():
     inputs = {}
 
     inputs['low_values_checkbox'] = pn.widgets.Checkbox(name='Hide Values Under', value=True, width=130, align=('start', 'center'))
-    inputs['low_values_input'] = pn.widgets.IntInput(name='', value=5, step=1, start=0, end=100, width=50, align='start')
+    inputs['low_values_input'] = pn.widgets.IntInput(name='', value=10, step=1, start=0, end=100, width=50, align='start')
 
     return inputs
 

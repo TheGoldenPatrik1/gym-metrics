@@ -41,7 +41,11 @@ def plot_exercise_frequency_comparison(data, sort_by_frequency, hide_low_values,
         hover_tooltips=[('Exercise', '@Exercise'), ('Frequency', '@Frequency')]
     ).opts(default_tools=default_bokeh_tools)
 
-def load_frequency_comparison(data, exercise_select, low_values_checkbox, low_values_input):
+def load_frequency_comparison(data, inputs, settings):
+    exercise_select = inputs['exercise_select']
+    low_values_checkbox = settings['low_values_checkbox']
+    low_values_input = settings['low_values_input']
+    
     def build_content():
         sort_by_frequency = pn.widgets.Checkbox(name='Sort by Frequency', value=True)
 

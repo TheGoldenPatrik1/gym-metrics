@@ -5,20 +5,40 @@ import pandas as pd
 from functools import reduce
 from components import lazy_load_accordion, stat_table
 import holoviews as hv
-from utils import default_bokeh_tools
+import utils
+
+def extract_data_item(item, exercise_class, exercise):
+    if exercise_class == 'exercise':
+        if exercise in item['exercises']:
+            return {
+                'date': item['date'],
+                'exercise': item['exercises'][exercise]
+            }
+    else:
+        for key in item['exercises'].keys():
+            classes = utils.get_exercise_classes(key)
+            if classes[exercise_class] != None and exercise in classes[exercise_class]:
+                return {
+                    'date': item['date'],
+                    'exercise': key
+                }
+    return None
+
+def extract_data(_data, exercise):
+    exercise_class = utils.get_class(exercise)
+    if exercise == 'All':
+        data = _data
+    else:
+        data = []
+        for item in _data:
+            item_data = extract_data_item(item, exercise_class, exercise)
+            if item_data != None:
+                data.append(item_data)
+    return data
 
 def get_frequency_df(_data, time_interval, exercise):
     # Filter the data based on the selected exercise
-    if exercise != 'All':
-        data = []
-        for item in _data:
-            if exercise in item['exercises']:
-                data.append({
-                    'date': item['date'],
-                    'exercise': item['exercises'][exercise]
-                })
-    else:
-        data = _data
+    data = extract_data(_data, exercise)
 
     # Create a DataFrame from the data
     df = pd.DataFrame(data)
@@ -89,7 +109,7 @@ def plot_frequency(data, time_interval, exercises):
     plots = [plot_frequency_single(data, time_interval, exercise, is_single) for exercise in exercises]
 
     plot = plots[0] if is_single else reduce(lambda x, y: x * y, plots)
-    plot = plot.opts(xrotation=90, default_tools=default_bokeh_tools)
+    plot = plot.opts(xrotation=90, default_tools=utils.default_bokeh_tools)
     if not is_single:
         plot = plot.opts(legend_position='top')
     return plot
@@ -101,7 +121,10 @@ def build_frequency_header(time_interval, *exercises):
         workout_str = ' vs '.join(exercises)
     return f'{workout_str} Frequency per {time_interval.capitalize()}'
 
-def load_frequency(data, time_interval_select, exercise_select):
+def load_frequency(data, inputs):
+    time_interval_select = inputs['time_interval_select']
+    exercise_select = inputs['exercise_select']
+
     def build_content():
         def update_frequency_stats(time_interval, *exercises):
             return generate_frequency_stats(data, time_interval, exercises)

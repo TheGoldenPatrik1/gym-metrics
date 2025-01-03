@@ -4,7 +4,7 @@ from functools import reduce
 from bokeh.models.formatters import NumeralTickFormatter
 from bokeh.models import HoverTool
 from components import lazy_load_accordion, stat_table
-from utils import default_bokeh_tools
+import utils
 
 def multiply_sets_reps_weight(data):
     sets = data['sets'] if 'sets' in data else 1
@@ -28,7 +28,8 @@ def build_df(data, exercise):
     # Loop through the data and extract the weight lifted
     for item in data:
         for key in item['exercises'].keys():
-            if exercise == 'All' or exercise == key:
+            classes = utils.get_exercise_classes(key)
+            if exercise == 'All' or exercise == key or exercise in classes.values() or exercise in classes['muscles']:
                 exercise_data = item['exercises'][key]
                 if type(exercise_data) is bool or type(exercise_data) is str:
                     continue
@@ -124,16 +125,18 @@ def plot_weight_lifted_single(data, time_interval, exercise, is_single):
         label=None if is_single else exercise
     ).opts(tools=[hover])
 
-    return plot
+    return (plot, weight_lifted['weight_lifted'].sum())
 
 def plot_weight_lifted(data, time_interval, exercises):
     exercises = [exercise for exercise in exercises if exercise != 'Unselected']
     is_single = len(exercises) == 1
 
     plots = [plot_weight_lifted_single(data, time_interval, exercise, is_single) for exercise in exercises]
+    sorted_plots = sorted(plots, key=lambda x: x[1], reverse=True)
+    sorted_plots = [plot for plot, _ in sorted_plots]
 
-    plot = plots[0] if is_single else reduce(lambda x, y: x * y, plots)
-    plot = plot.opts(default_tools=default_bokeh_tools)
+    plot = plots[0][0] if is_single else reduce(lambda x, y: x * y, sorted_plots)
+    plot = plot.opts(default_tools=utils.default_bokeh_tools)
     if not is_single:
         plot = plot.opts(legend_position='top')
     return plot
@@ -145,7 +148,10 @@ def build_weight_lifted_header(time_interval, *exercises):
         exercise_str = " vs ".join(exercises) + " "
     return f"{exercise_str}Weight Lifted per {time_interval.capitalize()}"
 
-def load_weight_lifted(data, time_interval_select, exercise_select):
+def load_weight_lifted(data, inputs):
+    time_interval_select = inputs['time_interval_select']
+    exercise_select = inputs['exercise_select']
+
     def build_content():
         def update_weight_lifted_stats(time_interval, *exercises):
             return generate_weight_lifted_stats(data, time_interval, exercises)
@@ -154,7 +160,7 @@ def load_weight_lifted(data, time_interval_select, exercise_select):
         def update_weight_lifted_plot(time_interval, *exercises):
             return plot_weight_lifted(data, time_interval, exercises)
         weight_lifted_plot = pn.bind(update_weight_lifted_plot, time_interval_select, *exercise_select)
-        
+
         return [weight_lifted_stats, weight_lifted_plot]
     
     weight_lifted_header = pn.bind(build_weight_lifted_header, time_interval_select, *exercise_select)
