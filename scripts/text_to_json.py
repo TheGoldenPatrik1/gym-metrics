@@ -208,7 +208,7 @@ def data_to_json(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='A tool to convert textual workout data to JSON.')
-    parser.add_argument('--input', '-i', type=str, required=True, help='Path to the input data file.')
+    parser.add_argument('--input', '-i', type=str, required=True, help='Path to the input text file.')
     parser.add_argument('--output', '-o', type=str, required=True, help='Path to the output JSON file.')
     args = parser.parse_args()
 

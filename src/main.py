@@ -16,6 +16,8 @@ def load_data(args):
     
     with open(args.input, 'r') as f:
         data = json.load(f)
+
+    data = sorted(data, key=lambda x: x['date'], reverse=True)
     return data
 
 def main():

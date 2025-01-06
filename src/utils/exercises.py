@@ -58,7 +58,6 @@ def get_exercise_classes(exercise):
         classes['group'] = PUSH
         classes['muscles'] = [CHEST]
     elif 'ab' in exercise or 'crunch' in exercise or 'leg raise' in exercise:
-        classes['split'] = UPPER
         classes['muscles'] = [ABS]
     elif 'calf' in exercise:
         classes['split'] = LOWER

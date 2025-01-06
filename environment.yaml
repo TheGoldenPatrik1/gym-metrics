@@ -8,3 +8,4 @@ dependencies:
   - watchfiles
   - hvplot
   - plotly
+  - python-dotenv

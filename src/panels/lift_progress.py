@@ -4,6 +4,7 @@ from bokeh.models import HoverTool
 from functools import reduce
 from components import lazy_load_accordion
 from utils import default_bokeh_tools
+import constants
 
 def build_sets_str(data):
     if 'sets' not in data or 'reps' not in data:
@@ -164,18 +165,18 @@ def plot_lift_progress(data, exercises):
 
 def process_exercise_name(exercise):
     if exercise == 'Lower':
-        return ['Squat', 'Deadlift']
+        return [constants.SQUAT, constants.DEADLIFT]
     if exercise == 'Upper':
-        return ['Pull-ups', 'Overhead Press', 'Bench']
+        return [constants.PULLUPS, constants.OVERHEAD_PRESS, constants.BENCH]
     if exercise == 'Pull':
-        return ['Pull-ups']
+        return [constants.PULLUPS]
     if exercise == 'Push':
-        return ['Overhead Press', 'Bench']
+        return [constants.OVERHEAD_PRESS, constants.BENCH]
     return [exercise]
 
 def generate_exercise_list(exercises):
     if exercises[0] == 'All':
-        return ['Pull-ups', 'Overhead Press', 'Bench', 'Squat', 'Deadlift']
+        return [constants.PULLUPS, constants.OVERHEAD_PRESS, constants.BENCH, constants.SQUAT, constants.DEADLIFT]
     total_exercises = []
     for exercise in exercises:
         if exercise != 'Unselected':

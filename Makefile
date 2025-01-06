@@ -9,7 +9,7 @@ default: run
 # Default target: handle arguments and start the web server
 run:
 	@if [ -n "$(ARGS)" ]; then \
-		FILE_PATH=$$(find . -name $(ARGS)); \
+		FILE_PATH=$$(find . -name $(ARGS) | head -n 1); \
 		if [ -z "$$FILE_PATH" ]; then \
 			echo "Error: file '$(ARGS)' not found!"; \
 			exit 1; \
@@ -18,7 +18,7 @@ run:
 			$(CMD) $$FILE_PATH; \
 		fi \
 	else \
-		FILE_PATH=$$(find . -name *.json); \
+		FILE_PATH=$$(find . -name *.json | head -n 1); \
 		if [ -z "$$FILE_PATH" ]; then \
 			echo "No JSON files found!"; \
 			exit 1; \
