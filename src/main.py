@@ -6,6 +6,7 @@ import panels
 import modules
 
 pn.extension(design="native", sizing_mode="stretch_width")
+pn.extension('plotly')
 
 @pn.cache
 def load_data(args):

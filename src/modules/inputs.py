@@ -95,8 +95,8 @@ def init_callbacks(inputs, settings, data):
         options['Exercises'] = build_select_list(exercises)
 
     def load_exercise_select(i):
-        settings['low_values_checkbox'].param.watch(update_exercise_select, 'value')
-        settings['low_values_input'].param.watch(update_exercise_select, 'value')
+        settings['low_values_checkbox'].param.watch(lambda _: update_exercise_select(i), 'value')
+        settings['low_values_input'].param.watch(lambda _: update_exercise_select(i), 'value')
         update_exercise_select(i)
 
     for i in range(len(inputs['exercise_select'])):

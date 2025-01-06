@@ -27,16 +27,22 @@ def extract_weight_lifted(exercise_data):
 def extract_item(dfs, item, exercise):
     if exercise in item['exercises']:
         exercise_data = item['exercises'][exercise]
-        if type(exercise_data) is bool or type(exercise_data) is str or '1RM' in exercise_data:
+        if type(exercise_data) is bool or type(exercise_data) is str:
             return
-        weight_lifted, sets = extract_weight_lifted(exercise_data)
+        if '1RM' in exercise_data:
+            weight_lifted = exercise_data['1RM']
+            sets = '1RM'
+        else:
+            weight_lifted, sets = extract_weight_lifted(exercise_data)
         obj = {
             'date': item['date'],
             'exercise': exercise,
             'weight_lifted': weight_lifted,
             'sets': sets
         }
-        if 'x7' in sets or 'x8' in sets or 'x10' in sets or 'x12' in sets or 'x' not in sets:
+        if '1RM' in sets:
+            dfs['1rm'].append(obj)
+        elif 'x7' in sets or 'x8' in sets or 'x10' in sets or 'x12' in sets or 'x' not in sets:
             dfs['low'].append(obj)
         elif 'x4' in sets or 'x5' in sets or 'x6' in sets:
             dfs['high'].append(obj)
@@ -45,7 +51,8 @@ def build_dfs(data, exercise):
     # Initialize the DataFrames
     dfs = {
         'low': [],
-        'high': []
+        'high': [],
+        '1rm': []
     }
 
     # Loop through the data and extract the weight lifted
@@ -67,23 +74,30 @@ def build_all_dfs(data, exercises):
 
 def calculate_lift_differences(data, exercises):
     dfs = build_all_dfs(data, exercises)
+    df_count = sum([len(df) for df in dfs.values()])
+
+    # Check if there are any differences
+    if df_count == 0:
+        return pn.pane.Markdown("There are no differences avaiable for the selected exercise(s).")
 
     # Calculate the differences
     differences = {}
+    percentages = {}
     for exercise_key in dfs:
         for df_key in dfs[exercise_key]:
+            if df_count > 5 and df_key == '1rm':
+                continue
             diff = dfs[exercise_key][df_key]['weight_lifted'].iloc[0] - dfs[exercise_key][df_key]['weight_lifted'].iloc[-1]
+            if diff == 0:
+                continue
             weight_type = f" ({df_key})" if len(dfs[exercise_key]) > 1 else ""
             differences[f"{exercise_key}{weight_type}"] = diff
-
-    # Check if there are any differences
-    if len(differences) == 0:
-        return pn.pane.Markdown("There are no differences avaiable for the selected exercise(s).")
+            percentages[f"{exercise_key}{weight_type}"] = diff / dfs[exercise_key][df_key]['weight_lifted'].iloc[0] * 100
 
     # Convert differences to a markdown table
     table = "| " + " | ".join(differences.keys()) + " |\n"
     table += "| " + " | ".join(["---" for _ in differences.keys()]) + " |\n"
-    table += "| " + " | ".join([str(val) for val in differences.values()]) + " |"
+    table += "| " + " | ".join([f"{differences[key]} ({percentages[key]:.2f}%)" for key in differences.keys()]) + " |"
 
     return pn.pane.Markdown(table)
 
@@ -112,18 +126,33 @@ def plot_lift_progress(data, exercises):
 
     for exercise_key in dfs:
         for df_key in dfs[exercise_key]:
+            if df_count > 5 and df_key == '1rm':
+                continue
             dfs[exercise_key][df_key]['date'] = pd.to_datetime(dfs[exercise_key][df_key]['date'])
-            plot = dfs[exercise_key][df_key].hvplot.line(
-                x='date',
-                y='weight_lifted',
-                xlabel='Date',
-                ylabel='Weight Lifted',
-                height=400,
-                width=800,
-                line_width=3,
-                hover_cols=['sets'],
-                label=generate_label(len(dfs), len(dfs[exercise_key]), exercise_key, df_key)
-            ).opts(tools=[hover])
+            if df_key == '1rm':
+                plot = dfs[exercise_key][df_key].hvplot.scatter(
+                    x='date',
+                    y='weight_lifted',
+                    xlabel='Date',
+                    ylabel='Weight Lifted',
+                    height=400,
+                    width=800,
+                    size=8,
+                    hover_cols=['sets'],
+                    label=generate_label(len(dfs), len(dfs[exercise_key]), exercise_key, df_key)
+                ).opts(tools=[hover])
+            else:
+                plot = dfs[exercise_key][df_key].hvplot.line(
+                    x='date',
+                    y='weight_lifted',
+                    xlabel='Date',
+                    ylabel='Weight Lifted',
+                    height=400,
+                    width=800,
+                    line_width=3,
+                    hover_cols=['sets'],
+                    label=generate_label(len(dfs), len(dfs[exercise_key]), exercise_key, df_key)
+                ).opts(tools=[hover])
             plots.append(plot)
 
     plot = reduce(lambda x, y: x * y, plots)
@@ -133,10 +162,26 @@ def plot_lift_progress(data, exercises):
 
     return plot
 
+def process_exercise_name(exercise):
+    if exercise == 'Lower':
+        return ['Squat', 'Deadlift']
+    if exercise == 'Upper':
+        return ['Pull-ups', 'Overhead Press', 'Bench']
+    if exercise == 'Pull':
+        return ['Pull-ups']
+    if exercise == 'Push':
+        return ['Overhead Press', 'Bench']
+    return [exercise]
+
 def generate_exercise_list(exercises):
     if exercises[0] == 'All':
         return ['Pull-ups', 'Overhead Press', 'Bench', 'Squat', 'Deadlift']
-    return [exercise for exercise in exercises if exercise != 'Unselected']
+    total_exercises = []
+    for exercise in exercises:
+        if exercise != 'Unselected':
+            total_exercises.extend(process_exercise_name(exercise))
+    total_exercises = list(dict.fromkeys(total_exercises))
+    return total_exercises
 
 def build_exercise_header(*exercises):
     if exercises[0] == 'All':
@@ -148,7 +193,7 @@ def build_exercise_header(*exercises):
 
 def load_lift_progress(data, inputs):
     exercise_select = inputs['exercise_select']
-    
+
     def build_content():
         def update_lift_differences(*exercise_input):
             exercises = generate_exercise_list(exercise_input)

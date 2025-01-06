@@ -57,10 +57,6 @@ def get_exercise_classes(exercise):
         classes['split'] = UPPER
         classes['group'] = PUSH
         classes['muscles'] = [CHEST]
-    elif 'row' in exercise or 'lat' in exercise or 'pull' in exercise:
-        classes['split'] = UPPER
-        classes['group'] = PULL
-        classes['muscles'] = [BACK, BICEPS]
     elif 'ab' in exercise or 'crunch' in exercise or 'leg raise' in exercise:
         classes['split'] = UPPER
         classes['muscles'] = [ABS]
@@ -77,6 +73,10 @@ def get_exercise_classes(exercise):
     elif 'quad' in exercise or 'leg extension' in exercise:
         classes['split'] = LOWER
         classes['muscles'] = [QUADS]
+    elif 'row' in exercise or 'lat' in exercise or 'pull' in exercise:
+        classes['split'] = UPPER
+        classes['group'] = PULL
+        classes['muscles'] = [BACK, BICEPS]
 
     return classes
 
