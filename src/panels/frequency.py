@@ -83,7 +83,7 @@ def generate_frequency_stats(data, time_interval, exercises):
 
 def plot_frequency_single(data, time_interval, exercise, is_single):
     # Get the frequency dataframe
-    _, frequency = get_frequency_df(data, time_interval, exercise)
+    df, frequency = get_frequency_df(data, time_interval, exercise)
     average_count = frequency['count'].mean()
 
     # Plot the frequency based on the selected interval
@@ -100,15 +100,23 @@ def plot_frequency_single(data, time_interval, exercise, is_single):
         line_dash='dashed',
         line_width=2
     )
-    return plot * avg_line
+
+    # Calculate the width of the dataframe
+    width_of_df = (df['date'].max() - df['date'].min()).days
+
+    return plot * avg_line, width_of_df
 
 def plot_frequency(data, time_interval, exercises):
     exercises = [exercise for exercise in exercises if exercise != 'Unselected']
     is_single = len(exercises) == 1
 
-    plots = [plot_frequency_single(data, time_interval, exercise, is_single) for exercise in exercises]
+    # Generate plots and sort by width of the DataFrame
+    plots_with_widths = [plot_frequency_single(data, time_interval, exercise, is_single) for exercise in exercises]
+    plots_with_widths.sort(key=lambda x: x[1], reverse=True)
+    sorted_plots = [plot for plot, _ in plots_with_widths]
 
-    plot = plots[0] if is_single else reduce(lambda x, y: x * y, plots)
+    # Combine plots
+    plot = sorted_plots[0] if is_single else reduce(lambda x, y: x * y, sorted_plots)
     plot = plot.opts(xrotation=90, default_tools=utils.default_bokeh_tools)
     if not is_single:
         plot = plot.opts(legend_position='top')
