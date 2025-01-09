@@ -2,6 +2,28 @@
 
 This is a powerful self-hosted web dashboard for visualizing your workout data, built with [python](https://www.python.org/) and [panel](https://github.com/holoviz/panel).
 
+<img width="1422" alt="Screenshot 2025-01-09 at 1 47 38 PM" src="https://github.com/user-attachments/assets/5d464de6-f5e1-41cd-8967-b42674ff31bc" />
+
+## Features
+
+- Ability to sort data based on weeks, months, or years
+- Multiple inputs for selecting and comparing workouts, splits, body groups, and exercises
+- Frequency graph:
+<img width="1422" alt="Screenshot 2025-01-09 at 1 48 24 PM" src="https://github.com/user-attachments/assets/86a436ca-823b-492f-9cc5-dee1799f6d71" />
+
+- Weight lifted graph:
+<img width="1423" alt="Screenshot 2025-01-09 at 1 48 52 PM" src="https://github.com/user-attachments/assets/ec822e80-757f-4ae4-a787-ae4dec4db8c4" />
+
+- Progress chart, split as necessary between "high" and "low" workouts:
+<img width="1422" alt="Screenshot 2025-01-09 at 1 49 32 PM" src="https://github.com/user-attachments/assets/cecbede9-8387-486f-b93f-c44cae1e4c50" />
+
+- Exercise frequency graph:
+<img width="1423" alt="Screenshot 2025-01-09 at 1 50 27 PM" src="https://github.com/user-attachments/assets/78712fae-7bce-45d0-aef1-fec886ce4db8" />
+
+- Exercise breakdown for splits and body groups:
+<img width="1332" alt="Screenshot 2025-01-09 at 1 51 07 PM" src="https://github.com/user-attachments/assets/66a0b3d4-bd19-46b7-9d8e-a0abb7ac91e6" />
+
+
 ## Getting Started
 
 1. Create a [conda](https://www.anaconda.com/) environment with the dependencies:
